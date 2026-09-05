@@ -1,0 +1,54 @@
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version number"
+        required: true
+        type: string
+        default: "1.0.0"
+
+      release_type:
+        description: "Select release type"
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: patch
+
+        jobs:
+  prepare:
+    runs-on: ubuntu-latest
+
+    outputs:
+      build_tag: ${{ steps.build.outputs.build_tag }}
+      build_date: ${{ steps.date.outputs.build_date }}
+
+    steps:
+      - name: Create build tag
+        id: build
+        run: |
+          echo "build_tag=${{ inputs.version }}-${{ inputs.release_type }}-${{ github.run_number }}" >> $GITHUB_OUTPUT
+
+      - name: Get build date
+        id: date
+        run: |
+          echo "build_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
+  announce:
+    needs: prepare
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Print outputs
+        run: |
+          echo "Build Tag: ${{ needs.prepare.outputs.build_tag }}"
+          echo "Build Date: ${{ needs.prepare.outputs.build_date }}"
+
+      - name: Write summary
+        run: |
+          echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | Release Type | Build Tag | Build Date |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------------|-----------|------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| ${{ inputs.version }} | ${{ inputs.release_type }} | ${{ needs.prepare.outputs.build_tag }} | ${{ needs.prepare.outputs.build_date }} |" >> $GITHUB_STEP_SUMMARY
