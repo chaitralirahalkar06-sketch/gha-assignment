@@ -1,4 +1,4 @@
-ame: Release Notes
+name: Release Notes
 
 on:
   workflow_dispatch:
